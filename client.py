@@ -9,10 +9,8 @@ import time
 
 random_default_identifier = random.randint(100000000000, 999999999999)
 parser = argparse.ArgumentParser(description="WebSocket client for system monitoring.")
-parser.add_argument("--identifier", type=str, default=str(random_default_identifier),
-                    help="Unique identifier for the system.")
-parser.add_argument("--server", type=str, default="ws://<YOUR_SERVER_IP>:6789",  # <-- à adapter
-                    help="WebSocket server URI (e.g., ws://192.168.1.100:6789)")
+parser.add_argument("--identifier", type=str, default=str(random_default_identifier), help="Unique identifier for the system.")
+parser.add_argument("--server", type=str, default="ws://<YOUR_SERVER_IP>:6789", help="WebSocket server URI")
 args = parser.parse_args()
 
 async def send_system_data():
@@ -52,5 +50,5 @@ async def send_system_data():
             print(f"Connection error: {e}, retrying in 5s...")
             await asyncio.sleep(5)
 
-asyncio.run(send_system_data())
-
+if __name__ == "__main__":
+    asyncio.run(send_system_data())
