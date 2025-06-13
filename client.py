@@ -6,49 +6,73 @@ import random
 import platform
 import json
 import time
+import rx
+from rx import operators as ops
+from rx.scheduler.eventloop import AsyncIOScheduler
 
 random_default_identifier = random.randint(100000000000, 999999999999)
-parser = argparse.ArgumentParser(description="WebSocket client for system monitoring.")
-parser.add_argument("--identifier", type=str, default=str(random_default_identifier), help="Unique identifier for the system.")
-parser.add_argument("--server", type=str, default="ws://<YOUR_SERVER_IP>:6789", help="WebSocket server URI")
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--identifier", type=str, default=str(random_default_identifier))
+parser.add_argument("--server", type=str, default="ws://localhost:6789")
 args = parser.parse_args()
 
-async def send_system_data():
+def get_system_data(identifier):
+    return {
+        "type": "client",              # Important: identify as client!
+        "identifier": identifier,
+        "timestamp": int(time.time()),
+        "cpu_total": psutil.cpu_percent(interval=None),
+        "cpu_per_core": psutil.cpu_percent(interval=None, percpu=True),
+        "memory_percent": psutil.virtual_memory().percent,
+        "swap_percent": psutil.swap_memory().percent,
+        "disk_percent": psutil.disk_usage('/').percent,
+        "bytes_sent": psutil.net_io_counters().bytes_sent,
+        "bytes_recv": psutil.net_io_counters().bytes_recv,
+        "process_count": len(psutil.pids()),
+        "system": {
+            "platform": platform.system(),
+            "platform_version": platform.version(),
+            "boot_time": psutil.boot_time()
+        }
+    }
+
+async def send_data(websocket, data):
+    try:
+        await websocket.send(json.dumps(data))
+    except websockets.ConnectionClosedError as e:
+        print(f"WebSocket connection closed unexpectedly: {e}")
+    except Exception as e:
+        print(f"Error sending data: {e}")
+
+async def main():
+    scheduler = AsyncIOScheduler(asyncio.get_event_loop())
+
     while True:
         try:
             async with websockets.connect(args.server) as websocket:
-                while True:
-                    cpu = psutil.cpu_percent(interval=1)
-                    per_core = psutil.cpu_percent(interval=None, percpu=True)
-                    memory = psutil.virtual_memory()
-                    swap = psutil.swap_memory()
-                    disk = psutil.disk_usage('/')
-                    net = psutil.net_io_counters()
-                    processes = len(psutil.pids())
+                print(f"[{args.identifier}] Connected to {args.server}")
 
-                    data = {
-                        "identifier": args.identifier,
-                        "timestamp": int(time.time()),
-                        "cpu_total": cpu,
-                        "cpu_per_core": per_core,
-                        "memory_percent": memory.percent,
-                        "swap_percent": swap.percent,
-                        "disk_percent": disk.percent,
-                        "bytes_sent": net.bytes_sent,
-                        "bytes_recv": net.bytes_recv,
-                        "process_count": processes,
-                        "system": {
-                            "platform": platform.system(),
-                            "platform_version": platform.version(),
-                            "boot_time": psutil.boot_time()
-                        }
-                    }
+                # Send initial message to identify as client immediately
+                init_data = {
+                    "type": "client",
+                    "identifier": args.identifier
+                }
+                await websocket.send(json.dumps(init_data))
 
-                    await websocket.send(json.dumps(data))
-                    await asyncio.sleep(1)
+                # Then start sending periodic system data every 1 second
+                rx.interval(1.0).pipe(
+                    ops.map(lambda _: get_system_data(args.identifier))
+                ).subscribe(
+                    lambda data: asyncio.create_task(send_data(websocket, data)),
+                    scheduler=scheduler
+                )
+
+                await asyncio.Future()  # Keep running until disconnected
+
         except Exception as e:
             print(f"Connection error: {e}, retrying in 5s...")
             await asyncio.sleep(5)
 
 if __name__ == "__main__":
-    asyncio.run(send_system_data())
+    asyncio.run(main())
