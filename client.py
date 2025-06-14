@@ -18,14 +18,20 @@ parser.add_argument("--server", type=str, default="ws://localhost:6789")
 args = parser.parse_args()
 
 def get_system_data(identifier):
+    try:
+        swap_percent = psutil.swap_memory().percent
+    except Exception as e:
+        print(f"[Warning] Could not retrieve swap memory: {e}")
+        swap_percent = None
+
     return {
-        "type": "client",              # Important: identify as client!
+        "type": "client",
         "identifier": identifier,
         "timestamp": int(time.time()),
         "cpu_total": psutil.cpu_percent(interval=None),
         "cpu_per_core": psutil.cpu_percent(interval=None, percpu=True),
         "memory_percent": psutil.virtual_memory().percent,
-        "swap_percent": psutil.swap_memory().percent,
+        "swap_percent": swap_percent,
         "disk_percent": psutil.disk_usage('/').percent,
         "bytes_sent": psutil.net_io_counters().bytes_sent,
         "bytes_recv": psutil.net_io_counters().bytes_recv,
@@ -36,6 +42,7 @@ def get_system_data(identifier):
             "boot_time": psutil.boot_time()
         }
     }
+
 
 async def send_data(websocket, data):
     try:
