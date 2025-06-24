@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Réactif 🔍</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>🚀 Monitoring des Machines</h1>
+    
+    <!-- Server Metrics Section -->
+    <div id="server-metrics">
+        <h2>Server Metrics</h2>
+        <p><strong>CPU Usage: </strong><span id="server-cpu">Loading...</span></p>
+        <p><strong>RAM Usage: </strong><span id="server-ram">Loading...</span></p>
+        <p><strong>Disk Usage: </strong><span id="server-disk">Loading...</span></p>
+        <p><strong>Imperative Processing Time: </strong><span id="imperative-time">Loading...</span></p>
+    </div>
+    
+    <!-- Machines Section -->
+    <div id="machines"></div>
+    
+    <script src="dashboard.js"></script>
+</body>
+</html>

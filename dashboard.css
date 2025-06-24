@@ -1,0 +1,87 @@
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #2c3e50;
+    color: #ecf0f1;
+    margin: 0;
+    padding: 0;
+}
+
+h1 {
+    text-align: center;
+    margin: 20px 0;
+    font-size: 36px;
+}
+
+#machines {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    gap: 20px;
+}
+
+.machine {
+    background-color: #34495e;
+    border-radius: 10px;
+    padding: 20px;
+    width: 300px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.machine h2 {
+    font-size: 24px;
+    color: #1abc9c;
+    margin-bottom: 10px;
+}
+
+.stats p {
+    margin: 10px 0;
+}
+
+.bar-container {
+    width: 100%;
+    background-color: #ecf0f1;
+    border-radius: 5px;
+    height: 10px;
+    margin: 5px 0;
+}
+
+.bar {
+    height: 100%;
+    border-radius: 5px;
+}
+
+.cpu { background-color: rgba(0, 123, 255, 0.8); }
+.ram { background-color: rgba(40, 167, 69, 0.8); }
+.disk { background-color: rgba(255, 193, 7, 0.8); }
+.swap { background-color: rgba(255, 99, 132, 0.8); }
+
+.badge {
+    padding: 2px 8px;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+.ok { background-color: #27ae60; color: #fff; }
+.warn { background-color: #f39c12; color: #fff; }
+.crit { background-color: #e74c3c; color: #fff; }
+
+canvas {
+    margin-top: 15px;
+}
+
+.network {
+    margin-top: 10px;
+    font-size: 16px;
+    color: #ecf0f1;
+}
+
+.proc {
+    font-size: 14px;
+    color: #ecf0f1;
+}
+
+.time {
+    font-size: 14px;
+    color: #ecf0f1;
+    font-style: italic;
+}
