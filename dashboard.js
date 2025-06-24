@@ -12,21 +12,16 @@ ws.onopen = () => {
 ws.onmessage = (event) => {
     const data = JSON.parse(event.data);
 
-    // Handle server metrics (only imperative performance and server stats)
     if (data.type === "server") {
         const serverMetrics = data.metrics;
 
-        // Display server metrics (e.g., CPU, RAM, Disk, etc.)
-        document.getElementById('server-cpu').textContent = `${serverMetrics.cpu_percent}% CPU`;
-        document.getElementById('server-ram').textContent = `${serverMetrics.memory_percent}% RAM`;
-        document.getElementById('server-disk').textContent = `${serverMetrics.disk_percent}% Disk`;
-
-        // Display only imperative performance time
-        document.getElementById('imperative-time').textContent = `Imperative Time: ${serverMetrics.imperative_time.toFixed(2)}s`;
-
-    } else if (data.type === "client") {
-        // Handle client data
+        document.getElementById('server-cpu').textContent = `${serverMetrics.cpu_percent}% CPU (Total: ${serverMetrics.cpu_total} cores)`;
+        document.getElementById('server-ram').textContent = `${serverMetrics.memory_usage.toFixed(2)} MB RAM (Total: ${serverMetrics.memory_total.toFixed(2)} MB)`;
+        document.getElementById('imperative-time').textContent = `Imperative Time: ${serverMetrics.imperative_time.toFixed(2)}s`;  // Display imperative time
+    } 
+    else if (data.type === "client") {
         const id = data.identifier;
+
         if (!machines[id]) {
             const block = document.createElement('div');
             block.className = 'machine';
@@ -34,42 +29,36 @@ ws.onmessage = (event) => {
             block.innerHTML = `
                 <h2>🖥 Machine ${id}</h2>
                 <div class="stats">
-                    <p><strong>CPU:</strong> <span class="cpu"></span></p>
-                    <p><strong>RAM:</strong> <span class="ram"></span></p>
-                    <p><strong>DISK:</strong> <span class="disk"></span></p>
-                    <p><strong>SWAP:</strong> <span class="swap"></span></p>
-                    <p><strong>Réseau:</strong> <span class="network"></span></p>
-                    <p><strong>Processus:</strong> <span class="proc"></span></p>
-                    <p><strong>MAJ:</strong> <span class="time"></span></p>
+                    <p><strong>CPU:</strong> <span class="cpu">Loading...</span></p>
+                    <p><strong>RAM:</strong> <span class="ram">Loading...</span></p>
+                    <p><strong>SWAP:</strong> <span class="swap">Loading...</span></p>
+                    <p><strong>Réseau:</strong> <span class="network">Loading...</span></p>
+                    <p><strong>Processus:</strong> <span class="proc">Loading...</span></p>
+                    <p><strong>MAJ:</strong> <span class="time">Loading...</span></p>
                 </div>
                 <canvas id="cpuChart-${id}"></canvas>
                 <canvas id="ramChart-${id}"></canvas>
-                <canvas id="diskChart-${id}"></canvas>
             `;
             document.getElementById('machines').appendChild(block);
             machines[id] = block;
 
-            // Create charts for each client machine
             charts[`cpu-${id}`] = createChart(`cpuChart-${id}`, 'CPU (%)', 'rgba(0, 123, 255, 0.6)');
             charts[`ram-${id}`] = createChart(`ramChart-${id}`, 'RAM (%)', 'rgba(40, 167, 69, 0.6)');
-            charts[`disk-${id}`] = createChart(`diskChart-${id}`, 'DISK (%)', 'rgba(255, 193, 7, 0.6)');
         }
 
-        // Update the machine data in the dashboard
-        machines[id].querySelector('.cpu').innerHTML = `${data.cpu_total}%`;
-        machines[id].querySelector('.ram').innerHTML = `${data.memory_percent}%`;
-        machines[id].querySelector('.disk').innerHTML = `${data.disk_percent}%`;
-        machines[id].querySelector('.swap').innerHTML = `${data.swap_percent !== null ? data.swap_percent : 'N/A'}%`;
+        // Update fields only if they exist
+        machines[id].querySelector('.cpu').innerHTML = `${data.cpu_percent || 'N/A'}% | ${data.cpu_total ? data.cpu_total.toFixed(2) : 'N/A'} cores`;
+        machines[id].querySelector('.ram').innerHTML = `${data.memory_percent || 'N/A'}% | ${data.memory_usage ? data.memory_usage.toFixed(2) : 'N/A'} MB`;
+        machines[id].querySelector('.swap').innerHTML = `${data.swap_percent !== null ? data.swap_percent : 'N/A'}% | ${data.swap_usage ? data.swap_usage.toFixed(2) : 'N/A'} MB`;
         machines[id].querySelector('.network').innerHTML = `${(data.bytes_sent / 1024).toFixed(2)} KB Sent | ${(data.bytes_recv / 1024).toFixed(2)} KB Received`;
         machines[id].querySelector('.proc').innerHTML = `${data.process_count} Processes`;
         machines[id].querySelector('.time').innerHTML = new Date(data.timestamp * 1000).toLocaleString();
 
-        // Update the charts with the latest values
-        updateChart(charts[`cpu-${id}`], data.cpu_total);
+        updateChart(charts[`cpu-${id}`], data.cpu_percent);
         updateChart(charts[`ram-${id}`], data.memory_percent);
-        updateChart(charts[`disk-${id}`], data.disk_percent);
     }
 };
+
 
 // Helper function to create a chart
 function createChart(elementId, label, borderColor) {

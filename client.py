@@ -24,26 +24,53 @@ current_process = psutil.Process(os.getpid())  # Current Python process
 
 def get_system_data(identifier):
     try:
-        swap_percent = psutil.swap_memory().percent
+        # Get Swap memory usage percentage
+        swap = psutil.swap_memory()
+        swap_percent = swap.percent
+        swap_used = swap.used / (1024 * 1024)  # Convert bytes to MB
     except Exception as e:
         print(f"[Warning] Could not retrieve swap memory: {e}")
-        swap_percent = None
+        swap_percent = "N/A"
+        swap_used = "N/A"
 
-    # Track CPU and Memory Usage of the current Python process
-    process_cpu_percent = current_process.cpu_percent(interval=None)
-    process_memory_percent = current_process.memory_percent()
+    try:
+        cpu_count = psutil.cpu_count()  # Physical cores
+        cpu_percent = psutil.cpu_percent()
+    except Exception as e:
+        print(f"[Warning] Could not retrieve CPU stats: {e}")
+        cpu_count = "N/A"
+        cpu_percent = "N/A"
 
-    return {
+    try:
+        memory = psutil.virtual_memory()
+        memory_percent = memory.percent
+        memory_used = memory.used / (1024 * 1024)  # Convert bytes to MB
+    except Exception as e:
+        print(f"[Warning] Could not retrieve memory stats: {e}")
+        memory_percent = "N/A"
+        memory_used = "N/A"
+
+    try:
+        disk_percent = psutil.disk_usage('/').percent
+        disk_used = psutil.disk_usage('/').used / (1024 * 1024 * 1024)  # in GB
+    except Exception as e:
+        print(f"[Warning] Could not retrieve disk stats: {e}")
+        disk_percent = "N/A"
+        disk_used = "N/A"
+
+    # Build the system data dictionary
+    data = {
         "type": "client",
         "identifier": identifier,
         "timestamp": int(time.time()),
-        "cpu_total": psutil.cpu_percent(interval=None),
-        "cpu_per_core": psutil.cpu_percent(interval=None, percpu=True),
-        "memory_percent": psutil.virtual_memory().percent,
-        "process_cpu_percent": process_cpu_percent,
-        "process_memory_percent": process_memory_percent,
-        "swap_percent": swap_percent,
-        "disk_percent": psutil.disk_usage('/').percent,
+        "cpu_total": cpu_percent if cpu_percent is not None else "N/A",
+        "cpu_cores": cpu_count if cpu_count is not None else "N/A",
+        "memory_percent": memory_percent if memory_percent is not None else "N/A",
+        "memory_used": memory_used if memory_used is not None else "N/A",
+        "swap_percent": swap_percent if swap_percent is not None else "N/A",
+        "swap_used": swap_used if swap_used is not None else "N/A",
+        "disk_percent": disk_percent if disk_percent is not None else "N/A",
+        "disk_used": disk_used if disk_used is not None else "N/A",
         "bytes_sent": psutil.net_io_counters().bytes_sent,
         "bytes_recv": psutil.net_io_counters().bytes_recv,
         "process_count": len(psutil.pids()),
@@ -54,6 +81,9 @@ def get_system_data(identifier):
         }
     }
 
+    return data
+
+
 async def send_data(websocket, data):
     try:
         await websocket.send(json.dumps(data))
@@ -61,6 +91,7 @@ async def send_data(websocket, data):
         print(f"WebSocket connection closed unexpectedly: {e}")
     except Exception as e:
         print(f"Error sending data: {e}")
+
 
 async def calculate_transmission_speed():
     global last_bytes_sent, last_time
@@ -80,6 +111,7 @@ async def calculate_transmission_speed():
         last_time = current_time
 
         await asyncio.sleep(1)
+
 
 async def main():
     # Start transmission speed calculation
@@ -111,6 +143,7 @@ async def main():
         except Exception as e:
             print(f"Error in WebSocket connection: {e}")
             await asyncio.sleep(5)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
