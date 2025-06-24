@@ -6,6 +6,7 @@ import random
 import platform
 import json
 import time
+import os
 
 random_default_identifier = random.randint(100000000000, 999999999999)
 
@@ -18,12 +19,19 @@ args = parser.parse_args()
 last_bytes_sent = 0
 last_time = time.time()
 
+# Get the current Python process using psutil
+current_process = psutil.Process(os.getpid())  # Current Python process
+
 def get_system_data(identifier):
     try:
         swap_percent = psutil.swap_memory().percent
     except Exception as e:
         print(f"[Warning] Could not retrieve swap memory: {e}")
         swap_percent = None
+
+    # Track CPU and Memory Usage of the current Python process
+    process_cpu_percent = current_process.cpu_percent(interval=None)
+    process_memory_percent = current_process.memory_percent()
 
     return {
         "type": "client",
@@ -32,6 +40,8 @@ def get_system_data(identifier):
         "cpu_total": psutil.cpu_percent(interval=None),
         "cpu_per_core": psutil.cpu_percent(interval=None, percpu=True),
         "memory_percent": psutil.virtual_memory().percent,
+        "process_cpu_percent": process_cpu_percent,
+        "process_memory_percent": process_memory_percent,
         "swap_percent": swap_percent,
         "disk_percent": psutil.disk_usage('/').percent,
         "bytes_sent": psutil.net_io_counters().bytes_sent,
@@ -96,11 +106,10 @@ async def main():
                         break
                     except Exception as e:
                         print(f"Error sending data: {e}")
-                        break
-                    await asyncio.sleep(1)
 
+                    await asyncio.sleep(1)
         except Exception as e:
-            print(f"Connection error: {e}, retrying in 5s...")
+            print(f"Error in WebSocket connection: {e}")
             await asyncio.sleep(5)
 
 if __name__ == "__main__":
