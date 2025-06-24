@@ -55,9 +55,11 @@ h1 {
 .badge.ok {
     background-color: #28a745;
 }
+
 .badge.warn {
     background-color: #ffc107;
 }
+
 .badge.crit {
     background-color: #dc3545;
 }
@@ -66,4 +68,53 @@ canvas {
     margin-top: 15px;
     width: 100% !important;
     height: 150px !important;
+}
+
+.bar-container {
+    width: 100%;
+    background-color: #eee;
+    border-radius: 6px;
+    overflow: hidden;
+    height: 16px;
+    margin-top: 4px;
+}
+
+.bar {
+    height: 100%;
+    transition: width 0.3s;
+}
+
+.bar.cpu {
+    background-color: #007bff;
+}
+
+/* blue */
+.bar.ram {
+    background-color: #28a745;
+}
+
+/* green */
+.bar.disk {
+    background-color: #ffc107;
+}
+
+/* yellow */
+.bar.swap {
+    background-color: #6c757d;
+}
+
+/* gray */
+.bar.network {
+    background-color: #17a2b8;
+}
+
+/* cyan */
+
+.bar-container {
+    width: 100%;
+    height: 20px;
+    background-color: #f0f0f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 10px;
 }
